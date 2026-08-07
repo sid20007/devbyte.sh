@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { SemesterCheckboxGroup } from "@/components/semester-checkbox-group";
 import { Search, UserPlus, Eye, Edit, Filter, X } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +18,7 @@ interface StudentListPageProps {
     programId?: string;
     academicYearId?: string;
     status?: string;
+    semesters?: string | string[];
   };
 }
 
@@ -26,6 +28,19 @@ export default async function StudentListPage({ searchParams }: StudentListPageP
   const programId = searchParams.programId || "";
   const academicYearId = searchParams.academicYearId || "";
   const status = searchParams.status || "";
+
+  // Parse multi-select semesters
+  let selectedSemesters: number[] = [];
+  if (Array.isArray(searchParams.semesters)) {
+    selectedSemesters = searchParams.semesters
+      .map((s) => parseInt(s, 10))
+      .filter((n) => !isNaN(n));
+  } else if (typeof searchParams.semesters === "string" && searchParams.semesters.trim() !== "") {
+    selectedSemesters = searchParams.semesters
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n));
+  }
 
   // Fetch filter options
   const [departments, programs, academicYears] = await Promise.all([
@@ -52,16 +67,13 @@ export default async function StudentListPage({ searchParams }: StudentListPageP
   if (status) {
     where.status = status;
   }
-
-  console.log("=== Student Directory Filter Debug ===");
-  console.log({
-    query,
-    departmentId,
-    programId,
-    academicYearId,
-    status,
-    whereClause: where,
-  });
+  if (selectedSemesters.length > 0) {
+    where.semester = {
+      number: {
+        in: selectedSemesters,
+      },
+    };
+  }
 
   const students = await prisma.student.findMany({
     where,
@@ -87,7 +99,8 @@ export default async function StudentListPage({ searchParams }: StudentListPageP
     }
   };
 
-  const isFiltered = query || departmentId || programId || academicYearId || status;
+  const isFiltered =
+    query || departmentId || programId || academicYearId || status || selectedSemesters.length > 0;
 
   return (
     <div className="space-y-6">
@@ -182,11 +195,14 @@ export default async function StudentListPage({ searchParams }: StudentListPageP
               </div>
             </div>
 
+            {/* Semester Multi-Select Checkboxes */}
+            <SemesterCheckboxGroup selectedSemesters={selectedSemesters} />
+
             <div className="flex items-center justify-end gap-2 pt-2 border-t">
               {isFiltered && (
                 <Link href="/students">
                   <Button variant="ghost" type="button" size="sm" className="flex items-center gap-1 text-muted-foreground">
-                    <X className="h-4 w-4" /> Reset Filters
+                    <X className="h-4 w-4" /> Reset All Filters
                   </Button>
                 </Link>
               )}
@@ -202,6 +218,11 @@ export default async function StudentListPage({ searchParams }: StudentListPageP
       <div className="space-y-2">
         <div className="text-xs text-muted-foreground flex justify-between items-center px-1">
           <span>Showing {students.length} student{students.length !== 1 ? "s" : ""}</span>
+          {selectedSemesters.length > 0 && (
+            <span className="text-primary font-medium">
+              Filtered by Semesters: {selectedSemesters.sort((a, b) => a - b).join(", ")}
+            </span>
+          )}
         </div>
         <Table>
           <TableHeader>
