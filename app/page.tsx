@@ -8,23 +8,32 @@ import { Users, GraduationCap, Building2, UserCheck, ArrowRight, UserPlus } from
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [totalStudents, activeStudents, programs, totalDepartments] = await Promise.all([
+  const [totalStudents, activeStudents, programs, totalDepartments, academicYears, allStudents] = await Promise.all([
     prisma.student.count(),
     prisma.student.count({ where: { status: "active" } }),
-    prisma.program.findMany({
-      include: {
-        _count: {
-          select: { students: true },
-        },
+    prisma.program.findMany({ orderBy: { name: "asc" } }),
+    prisma.department.count(),
+    prisma.academicYear.findMany({ orderBy: { label: "asc" } }),
+    prisma.student.findMany({
+      select: {
+        id: true,
+        academicYearId: true,
+        program: { select: { name: true } },
+        semester: { select: { number: true } },
+        academicYear: { select: { label: true } },
       },
     }),
-    prisma.department.count(),
   ]);
 
-  const chartData = programs.map((prog) => ({
-    program: prog.name,
-    "Student Count": prog._count.students,
+  const studentRecords = allStudents.map((s) => ({
+    id: s.id,
+    programName: s.program.name,
+    semesterNumber: s.semester.number,
+    academicYearId: s.academicYearId,
+    academicYearLabel: s.academicYear.label,
   }));
+
+  const programNames = programs.map((p) => p.name);
 
   return (
     <div className="space-y-8">
@@ -117,9 +126,13 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      {/* Program Bar Chart Section */}
+      {/* Program & Semester Bar Chart Section */}
       <div>
-        <ProgramBarChart data={chartData} />
+        <ProgramBarChart
+          students={studentRecords}
+          academicYears={academicYears}
+          programNames={programNames}
+        />
       </div>
 
       {/* Quick Action Footer Banner */}

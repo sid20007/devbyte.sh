@@ -53,6 +53,16 @@ export default async function StudentListPage({ searchParams }: StudentListPageP
     where.status = status;
   }
 
+  console.log("=== Student Directory Filter Debug ===");
+  console.log({
+    query,
+    departmentId,
+    programId,
+    academicYearId,
+    status,
+    whereClause: where,
+  });
+
   const students = await prisma.student.findMany({
     where,
     include: {

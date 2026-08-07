@@ -101,46 +101,35 @@ async function main() {
   }
 
   const programs = [progISE, progCSE, progAIML, progECE];
+  const academicYears = [ay2023, ay2024, ay2025];
   const names = generateIndianNames(250);
 
-  // Seed 250 Students with sensible cohort mapping
+  // Seed 250 Students with decoupled program and academic year assignment
   for (let i = 0; i < 250; i++) {
     const name = names[i];
     const program = programs[i % programs.length];
 
-    // Cohort distribution:
-    // i % 4 determines academic year / semester bracket
+    // Decouple academic year and semester allocation so all programs have representation across all academic years & semesters
+    const academicYearObj = academicYears[i % academicYears.length];
+
     let admissionYear: number;
     let semesterNumber: number; // 1 to 8
-    let academicYearObj: { id: string };
     let status: string;
 
-    const cohort = i % 4;
+    const semesterIndex = (i + Math.floor(i / 4)) % 8; // Distribute evenly across 8 semesters
+    semesterNumber = semesterIndex + 1;
 
-    if (cohort === 0) {
-      // 1st Year Students (Admitted 2024) -> Semesters 1 or 2
+    if (semesterNumber <= 2) {
       admissionYear = 2024;
-      semesterNumber = (i % 2 === 0) ? 1 : 2;
-      academicYearObj = ay2024;
       status = (i % 17 === 0) ? 'inactive' : 'active';
-    } else if (cohort === 1) {
-      // 2nd Year Students (Admitted 2023) -> Semesters 3 or 4
+    } else if (semesterNumber <= 4) {
       admissionYear = 2023;
-      semesterNumber = (i % 2 === 0) ? 3 : 4;
-      academicYearObj = ay2024;
       status = (i % 19 === 0) ? 'inactive' : 'active';
-    } else if (cohort === 2) {
-      // 3rd Year Students (Admitted 2022) -> Semesters 5 or 6
+    } else if (semesterNumber <= 6) {
       admissionYear = 2022;
-      semesterNumber = (i % 2 === 0) ? 5 : 6;
-      academicYearObj = ay2023;
       status = (i % 23 === 0) ? 'inactive' : 'active';
     } else {
-      // 4th Year / Final Year Students (Admitted 2021) -> Semesters 7 or 8
       admissionYear = 2021;
-      semesterNumber = (i % 2 === 0) ? 7 : 8;
-      academicYearObj = ay2023;
-      // Only students in Semester 8 or completing 8th semester can be graduated
       if (semesterNumber === 8 && i % 3 === 0) {
         status = 'graduated';
       } else if (i % 25 === 0) {
