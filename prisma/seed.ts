@@ -2,17 +2,40 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const indianNames = [
-  "Aarav Sharma", "Ananya Verma", "Rohan Gupta", "Priya Patel", "Aditya Singh",
-  "Sneha Reddy", "Vihaan Iyer", "Kavya Nair", "Ishaan Malhotra", "Diya Joshi",
-  "Kabir Kapoor", "Riya Sen", "Devansh Mehta", "Meera Saxena", "Arjun Bhatia",
-  "Pooja Deshmukh", "Yash Rao", "Nisha Chaudhary", "Siddharth Das", "Neha Agarwal",
-  "Karan Kulkarni", "Tarun Kumar", "Tanvi Pillai", "Rahul Mishra", "Shruti Pandey",
-  "Varun Bose", "Anushka Ghosh", "Harsh Vardhan", "Divya Menon", "Aman Trivedi"
+const firstNames = [
+  "Aarav", "Ananya", "Rohan", "Priya", "Aditya", "Sneha", "Vihaan", "Kavya", "Ishaan", "Diya",
+  "Kabir", "Riya", "Devansh", "Meera", "Arjun", "Pooja", "Yash", "Nisha", "Siddharth", "Neha",
+  "Karan", "Tarun", "Tanvi", "Rahul", "Shruti", "Varun", "Anushka", "Harsh", "Divya", "Aman",
+  "Karthik", "Swati", "Pranav", "Anish", "Preeti", "Gautam", "Bhavana", "Chetan", "Deepa", "Rajesh",
+  "Shreya", "Nikhil", "Manish", "Aditi", "Abhinav", "Payal", "Sameer", "Simran", "Vikram", "Poonam"
 ];
 
+const lastNames = [
+  "Sharma", "Verma", "Gupta", "Patel", "Singh", "Reddy", "Iyer", "Nair", "Malhotra", "Joshi",
+  "Kapoor", "Sen", "Mehta", "Saxena", "Bhatia", "Deshmukh", "Rao", "Chaudhary", "Das", "Agarwal",
+  "Kulkarni", "Kumar", "Pillai", "Mishra", "Pandey", "Bose", "Ghosh", "Vardhan", "Menon", "Trivedi",
+  "Nambiar", "Hegde", "Shetty", "Kalia", "Somani", "Solanki", "Bansal", "Wagh", "Naik", "Jain"
+];
+
+function generateIndianNames(count: number): string[] {
+  const names: string[] = [];
+  const set = new Set<string>();
+
+  for (let i = 0; i < firstNames.length; i++) {
+    for (let j = 0; j < lastNames.length; j++) {
+      const name = `${firstNames[i]} ${lastNames[j]}`;
+      if (!set.has(name)) {
+        set.add(name);
+        names.push(name);
+        if (names.length === count) return names;
+      }
+    }
+  }
+  return names;
+}
+
 async function main() {
-  console.log('Seeding database...');
+  console.log('Seeding database with updated 250 student dataset...');
 
   // Clean up existing data for idempotency
   await prisma.student.deleteMany();
@@ -21,38 +44,45 @@ async function main() {
   await prisma.academicYear.deleteMany();
   await prisma.semester.deleteMany();
 
-  // Create 2 Departments
-  const deptCSE = await prisma.department.create({
-    data: { name: 'Department of Computer Science & Engineering' },
+  // Create Department: School of Engineering
+  const deptSOE = await prisma.department.create({
+    data: { name: 'School of Engineering' },
   });
 
-  const deptEME = await prisma.department.create({
-    data: { name: 'Department of Electronics & Mechanical Engineering' },
+  // Create 4 Programs under School of Engineering
+  const progISE = await prisma.program.create({
+    data: {
+      name: 'B.Tech Information Science & Engineering (ISE)',
+      departmentId: deptSOE.id,
+    },
   });
 
-  // Create 3 Programs
   const progCSE = await prisma.program.create({
     data: {
-      name: 'B.Tech CSE',
-      departmentId: deptCSE.id,
+      name: 'B.Tech Computer Science & Engineering (CSE)',
+      departmentId: deptSOE.id,
+    },
+  });
+
+  const progAIML = await prisma.program.create({
+    data: {
+      name: 'B.Tech Artificial Intelligence & Machine Learning (AIML)',
+      departmentId: deptSOE.id,
     },
   });
 
   const progECE = await prisma.program.create({
     data: {
-      name: 'B.Tech ECE',
-      departmentId: deptEME.id,
+      name: 'B.Tech Electronics & Communication Engineering (ECE)',
+      departmentId: deptSOE.id,
     },
   });
 
-  const progMech = await prisma.program.create({
-    data: {
-      name: 'B.Tech Mechanical',
-      departmentId: deptEME.id,
-    },
+  // Create 3 Academic Years
+  const ay2023 = await prisma.academicYear.create({
+    data: { label: '2023-24' },
   });
 
-  // Create 2 Academic Years
   const ay2024 = await prisma.academicYear.create({
     data: { label: '2024-25' },
   });
@@ -61,36 +91,76 @@ async function main() {
     data: { label: '2025-26' },
   });
 
-  // Create 4 Semesters
-  const sem1 = await prisma.semester.create({ data: { number: 1 } });
-  const sem2 = await prisma.semester.create({ data: { number: 2 } });
-  const sem3 = await prisma.semester.create({ data: { number: 3 } });
-  const sem4 = await prisma.semester.create({ data: { number: 4 } });
+  // Create 8 Semesters
+  const semesters = [];
+  for (let s = 1; s <= 8; s++) {
+    const sem = await prisma.semester.create({
+      data: { number: s },
+    });
+    semesters.push(sem);
+  }
 
-  const programs = [progCSE, progECE, progMech];
-  const academicYears = [ay2024, ay2025];
-  const semesters = [sem1, sem2, sem3, sem4];
-  const statuses = ['active', 'active', 'active', 'inactive', 'graduated'];
+  const programs = [progISE, progCSE, progAIML, progECE];
+  const names = generateIndianNames(250);
 
-  // Create 30 Students
-  for (let i = 0; i < indianNames.length; i++) {
-    const name = indianNames[i];
+  // Seed 250 Students with sensible cohort mapping
+  for (let i = 0; i < 250; i++) {
+    const name = names[i];
     const program = programs[i % programs.length];
-    const departmentId = program.departmentId;
-    const academicYear = academicYears[i % academicYears.length];
-    const semester = semesters[i % semesters.length];
-    const admissionYear = 2021 + (i % 4);
-    const status = statuses[i % statuses.length];
+
+    // Cohort distribution:
+    // i % 4 determines academic year / semester bracket
+    let admissionYear: number;
+    let semesterNumber: number; // 1 to 8
+    let academicYearObj: { id: string };
+    let status: string;
+
+    const cohort = i % 4;
+
+    if (cohort === 0) {
+      // 1st Year Students (Admitted 2024) -> Semesters 1 or 2
+      admissionYear = 2024;
+      semesterNumber = (i % 2 === 0) ? 1 : 2;
+      academicYearObj = ay2024;
+      status = (i % 17 === 0) ? 'inactive' : 'active';
+    } else if (cohort === 1) {
+      // 2nd Year Students (Admitted 2023) -> Semesters 3 or 4
+      admissionYear = 2023;
+      semesterNumber = (i % 2 === 0) ? 3 : 4;
+      academicYearObj = ay2024;
+      status = (i % 19 === 0) ? 'inactive' : 'active';
+    } else if (cohort === 2) {
+      // 3rd Year Students (Admitted 2022) -> Semesters 5 or 6
+      admissionYear = 2022;
+      semesterNumber = (i % 2 === 0) ? 5 : 6;
+      academicYearObj = ay2023;
+      status = (i % 23 === 0) ? 'inactive' : 'active';
+    } else {
+      // 4th Year / Final Year Students (Admitted 2021) -> Semesters 7 or 8
+      admissionYear = 2021;
+      semesterNumber = (i % 2 === 0) ? 7 : 8;
+      academicYearObj = ay2023;
+      // Only students in Semester 8 or completing 8th semester can be graduated
+      if (semesterNumber === 8 && i % 3 === 0) {
+        status = 'graduated';
+      } else if (i % 25 === 0) {
+        status = 'inactive';
+      } else {
+        status = 'active';
+      }
+    }
+
+    const semesterObj = semesters[semesterNumber - 1];
 
     await prisma.student.create({
       data: {
         name,
         admissionYear,
         status,
-        departmentId,
+        departmentId: deptSOE.id,
         programId: program.id,
-        academicYearId: academicYear.id,
-        semesterId: semester.id,
+        academicYearId: academicYearObj.id,
+        semesterId: semesterObj.id,
       },
     });
   }
