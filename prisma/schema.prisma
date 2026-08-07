@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Department {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  programs  Program[]
+  students  Student[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Program {
+  id           String     @id @default(cuid())
+  name         String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  students     Student[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model AcademicYear {
+  id        String    @id @default(cuid())
+  label     String    @unique // e.g., "2024-25"
+  students  Student[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Semester {
+  id        String    @id @default(cuid())
+  number    Int       @unique // e.g., 1, 2, 3, etc.
+  students  Student[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Student {
+  id             String       @id @default(cuid())
+  name           String
+  admissionYear  Int
+  status         String       @default("active") // "active", "inactive", or "graduated"
+  departmentId   String
+  department     Department   @relation(fields: [departmentId], references: [id])
+  programId      String
+  program        Program      @relation(fields: [programId], references: [id])
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  semesterId     String
+  semester       Semester     @relation(fields: [semesterId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
